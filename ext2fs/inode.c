@@ -1,10 +1,8 @@
 #include "dir.h"
 #include "inode.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 #include "device.h"
 #include "trace.h"
+#include "mem.h"
 
 void show_inode(int id, inode_t *inode) {
     if (inode == 0)
@@ -22,7 +20,7 @@ void show_inode(int id, inode_t *inode) {
 
 }
 
-inode_t *read_inode(floppy_device_t *dev, int inode_id) {
+inode_t *read_inode(device_t *dev, int inode_id) {
     trace("============== read inode id:%d===========\n", inode_id);
     //show_disk("read_inode", &dev->disk);
     if (dev == 0) {
@@ -58,8 +56,8 @@ inode_t *read_inode(floppy_device_t *dev, int inode_id) {
     if (dev->inode_table.block_id != block_id) {
         trace("locate block(%d) for inode(%d) table:,\n", block_id, inode_id);
         if (dev->inode_table.buffer != 0)
-            free(dev->inode_table.buffer);
-        dev->inode_table.buffer = (u8*)malloc(block_sz);
+            free_mem(dev->inode_table.buffer);
+        dev->inode_table.buffer = (u8*)alloc_mem(block_sz);
         dev->inode_table.block_id = block_id;
         int nz = read_blocks(&dev->disk, block_id, dev->inode_table.buffer);
     }
@@ -68,22 +66,14 @@ inode_t *read_inode(floppy_device_t *dev, int inode_id) {
     inode_t * inode = (inode_t *)dev->inode_table.buffer;
     //inode += inode_offset;
     inode = (inode_t *)((u8*)inode + dev->super->s_inode_size * inode_offset);
-/*
-    for (int idx = 0; idx < 4; idx ++) {
-        inode_t * node = (inode_t *)dev->inode_table.buffer;
-        node += idx*2;
-        show_inode(idx, node);
-    }
 
-    show_inode(2, inode);
-*/
     trace("============== read inode end id:%d===========\n", inode_id);
     return inode;
 }
 
 u32 get_inode_mode(disk_t *disk, int inode_id) {
     show_disk("get_inode_mode: ", disk);
-    floppy_device_t *device = get_device(disk);
+    device_t *device = get_device(disk);
     device->disk = *disk;
     inode_t *node = read_inode(device, inode_id);
 
@@ -110,33 +100,33 @@ int is_inode_dir(disk_t *disk, int inode_id) {
 }
 
 void reset_dir_entry(disk_t *disk, int inode_id) {
-    floppy_device_t *device = get_device(disk);
+    device_t *device = get_device(disk);
     inode_t *inode =  read_inode(device, inode_id);
     if (!inode) 
         return;
     int block_id = inode->i_block[0]; //i_block[0]
     if (device->dir_buffer.block_id != block_id) {
         if (device->dir_buffer.buffer)
-            free(device->dir_buffer.buffer);
-        device->dir_buffer.buffer = (u8*)malloc(device->block_size);
+            free_mem(device->dir_buffer.buffer);
+        device->dir_buffer.buffer = (u8*)alloc_mem(device->block_size);
         device->dir_buffer.block_id = block_id;
     }
     device->dir_entry_idx = 0;//device->dir_buffer.buffer;
 }
 
 int get_next_dir_entry(disk_t *disk, int inode_id, char *name) {
-    floppy_device_t *device = get_device(disk);
+    device_t *device = get_device(disk);
     inode_t *inode =  read_inode(device, inode_id);
     if (!inode) {
-        printf("get_next_dir_entry read_inode failed.\n");
+        stdoutput("get_next_dir_entry read_inode failed.\n");
         return -1;
     }
     int block_id = inode->i_block[0]; //i_block[0]
     if (device->dir_buffer.block_id != block_id) {
         trace("get_next_dir_entry prepare the dir buffer.\n");
         if (device->dir_buffer.buffer)
-            free(device->dir_buffer.buffer);
-        device->dir_buffer.buffer = (u8*)malloc(device->block_size);
+            free_mem(device->dir_buffer.buffer);
+        device->dir_buffer.buffer = (u8*)alloc_mem(device->block_size);
         int nz = read_blocks(&device->disk, block_id, device->dir_buffer.buffer);
         device->dir_buffer.block_id = block_id;
         device->dir_entry_idx = 0;//device->dir_buffer.buffer;
@@ -148,12 +138,12 @@ int get_next_dir_entry(disk_t *disk, int inode_id, char *name) {
         if (dir->name[0] == '.')  {
             trace("SPECIFIC FILE. inode:%d\n", dir->inode);
         }
-        else if (strcmp(dir->name, "lost+found") == 0) {
+        else if (cmp_str(dir->name, "lost+found", 64) == 0) {
             trace("lost+found.inode:%d\n", dir->inode);
         }
         else {
             trace("found a file:%s, inode:%d\n", dir->name, dir->inode);
-            strcpy(name, dir->name);
+            move_str(name, dir->name, 64);
             device->dir_entry_idx += dir->rec_len;
             return dir->inode;
         }
@@ -164,10 +154,10 @@ int get_next_dir_entry(disk_t *disk, int inode_id, char *name) {
 }
 
 int get_inode_file(disk_t *disk, int inode_id, char *buf) {
-    floppy_device_t *device = get_device(disk);
+    device_t *device = get_device(disk);
     inode_t *inode = read_inode(device, inode_id);
     if (!inode) {
-        printf("get_inode_file read_inode failed.\n");
+        stdoutput("get_inode_file read_inode failed.\n");
         return -1;
     }
 
@@ -178,11 +168,11 @@ int get_inode_file(disk_t *disk, int inode_id, char *buf) {
     if (device->data_buffer.block_id != block_id) {
         trace("get_next_dir_entry prepare the dir buffer.\n");
         if (device->data_buffer.buffer)
-            free(device->data_buffer.buffer);
-        device->data_buffer.buffer = (u8*)malloc(device->block_size);
+            free_mem(device->data_buffer.buffer);
+        device->data_buffer.buffer = (u8*)alloc_mem(device->block_size);
         int nz = read_blocks(&device->disk, block_id, device->data_buffer.buffer);
         device->data_buffer.block_id = block_id;
     }
-    memcpy(buf, device->data_buffer.buffer, inode->i_size);
+    mov_mem(buf, device->data_buffer.buffer, inode->i_size);
     return inode->i_size;
 }

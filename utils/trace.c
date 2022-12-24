@@ -4,11 +4,11 @@
 static int trace_on = 0;
 
 void enable_trace() {
-    trace_on = 1;
+  trace_on = 1;
 }
 
 void disable_trace() {
-    trace_on = 0;
+  trace_on = 0;
 }
 
 void trace(char *fmt, ...) {
@@ -18,4 +18,11 @@ void trace(char *fmt, ...) {
     vprintf (fmt, args);
     va_end (args);
   }
+}
+
+void stdoutput(char *fmt, ...) {
+  va_list args;
+  va_start (args, fmt);
+  vprintf (fmt, args);
+  va_end (args);
 }

@@ -85,7 +85,7 @@ const int str_2_cmd(char *str) {
 
 int main() {
     disk_t disk;
-    disk.major = DISK_TYPE_FLOPPY;
+    disk.major = 1;//DISK_TYPE_FLOPPY;
     disk.minor= PIMARY_DISK;
     disk.partition = 0;
     //enable_trace();

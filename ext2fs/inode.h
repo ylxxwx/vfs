@@ -6,7 +6,7 @@
 
 #define INVALID_MODE 0xFFFF
 
-inode_t * read_inode(floppy_device_t *dev, int inode_id);
+inode_t * read_inode(device_t *dev, int inode_id);
 
 u32 get_inode_mode(disk_t *dev, int inode_id);
 int is_inode_file(disk_t *dev, int inode_id);

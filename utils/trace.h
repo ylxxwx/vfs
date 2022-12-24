@@ -4,6 +4,7 @@
 #include <stdarg.h>
  
 void trace(char *fmt, ...);
+void stdoutput(char *fmt, ...);
 
 void enable_trace();
 void disable_trace();

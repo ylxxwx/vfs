@@ -14,13 +14,17 @@
 #define PARTITION_3 2
 #define PARTITION_4 3
 
+#define SECTOR_SIZE 512
+#define SUPER_SIZE  (2*SECTOR_SIZE)
+
+
 typedef struct {
   u8 major;
   u8 minor;  
   u8 partition;
 } disk_t;
 
-char * disk_name(disk_t *disk);
 void show_disk(char *prefix, disk_t *disk);
+int read_sector(disk_t *disk, int sector_id, int num, u8 *buf);
 
 #endif //_DISK_H_

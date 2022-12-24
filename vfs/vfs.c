@@ -1,10 +1,7 @@
 #include "vfs.h"
-#include "fs.h"
 #include "ext2.h"
 #include "inode.h"
-#include "stdio.h"
-#include <stdlib.h>
-#include <string.h>
+#include "mem.h"
 #include "trace.h"
 
 #define VS_NAME_LEN 64
@@ -58,13 +55,13 @@ void sync_node(vfs_node_t *node) {
             ret_node = get_next_dir_entry(&node->disk, node->inode_id, name);
             if (ret_node > 0) {
                 trace("read dir entry id:%d.\n", ret_node);
-                vfs_node_t *child = (vfs_node_t *)malloc(sizeof(vfs_node_t));
-                memset((u8*)child, 0, sizeof(vfs_node_t));
+                vfs_node_t *child = (vfs_node_t *)alloc_mem(sizeof(vfs_node_t));
+                clear_mem((u8*)child, 0, sizeof(vfs_node_t));
                 child->disk = node->disk;
                 //show_disk("child disk: ", &child->disk);
                 child->parent = node;
                 node->childs[idx++] = child;
-                strcpy(child->name, name);
+                move_str(child->name, name, 64);
                 child->inode_id = ret_node;
                 child->synced = 0;
             } else {
@@ -77,7 +74,7 @@ void sync_node(vfs_node_t *node) {
 
 int mount_root(disk_t *disk) {
     show_disk("mount_root: ", disk);
-    memset(root.name, 0, VS_NAME_LEN);
+    clear_mem(root.name, 0, VS_NAME_LEN);
     root.name[0] = '/';
     root.disk = *disk;
     root.inode_id = ROOT_INODE;
@@ -109,14 +106,14 @@ void ls_cur_dir() {
     }
     for (int idx = 0; idx < 64; idx++) {
         if (cur->childs[idx] != 0) {
-            printf("%s  ", (cur->childs[idx])->name);
+            stdoutput("%s  ", (cur->childs[idx])->name);
         }
     }
-    printf("\n");
+    stdoutput("\n");
 }
 
 void cd_dir(char *path) {
-    if (0==strncmp(path, "..", 2)) {
+    if (0==cmp_str(path, "..", 2)) {
         cur = cur->parent;
         return;
     }
@@ -124,7 +121,7 @@ void cd_dir(char *path) {
     for (int idx = 0; idx < 64; idx++) {
         if (cur->childs[idx] == 0)
             continue;
-        if (0==strncmp(cur->childs[idx]->name, path, 64)) {
+        if (0==cmp_str(cur->childs[idx]->name, path, 64)) {
             if (cur->childs[idx]->synced == 0) {
                 sync_node(cur->childs[idx]);
                 trace("sync done\n");
@@ -150,7 +147,7 @@ void more_file(char *path) {
     for (int idx = 0; idx < 64; idx++) {
         if (cur->childs[idx] == 0)
             continue;
-        if (0==strncmp(cur->childs[idx]->name, path, 64)) {
+        if (0==cmp_str(cur->childs[idx]->name, path, 64)) {
             if (cur->childs[idx]->synced == 0) {
                 sync_node(cur->childs[idx]);
                 trace("more file sync node done\n");
@@ -161,9 +158,8 @@ void more_file(char *path) {
             }
             char buf[1024] = {0};
             int nz = read_inode_file(cur->childs[idx], buf);
-            printf("file:%s, size:%d\n", path, nz);
-            printf("%s", buf);
+            trace("file:%s, size:%d\n", path, nz);
+            stdoutput("%s", buf);
         }
     }
 }
-

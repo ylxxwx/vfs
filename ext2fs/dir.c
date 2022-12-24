@@ -1,6 +1,5 @@
 #include "dir.h"
 #include "utils.h"
-#include "stdio.h"
 #include "trace.h"
 
 void show_direntry(dir_entry_t *dir) {

@@ -2,8 +2,7 @@
 #ifndef __EXT2_SPEC_H__
 #define __EXT2_SPEC_H__
 
-#include <stdint.h>
-
+#include "type.h"
 /*
 1. floppy works like a block group in a hard disk.
 2. sector layout
@@ -23,13 +22,6 @@
 */
 
 #define ROOT_INODE 2
-
-// little endian is default for intel x86
-typedef uint32_t __le32;
-typedef uint16_t __le16;
-typedef uint8_t  __u8;
-typedef uint16_t __u16;
-typedef uint32_t __u32;
 
 #define EXT2_NAME_LEN 255
 

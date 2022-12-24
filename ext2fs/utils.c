@@ -1,6 +1,4 @@
 #include "utils.h"
-#include "stdio.h"
-#include "stdlib.h"
 
 // The following function return sector Nr. of each part .
 
@@ -23,14 +21,3 @@ u32 superblock_offset(int partition_offset) {
 u32 block_offset(int partition_offset, int block_id, int log_block_sz) {
     return partition_offset + block_id * sectors_in_block(log_block_sz);
 }
-
-/*
-u32 block_offset_in_group1(int group1_offset, int block_sz, int block_id) {
-    return group1_offset + block_id * sectors_in_block(block_sz);
-}
-
-u32 block_offset_sector(int group1_offset, int block_sz, int block_id, int group_id, int blocks_in_group) {
-    return (block_offset_in_group1(group1_offset, block_sz, block_id) 
-          + sectors_in_block(block_sz) * blocks_in_group * (group_id - 1));
-}
-*/
