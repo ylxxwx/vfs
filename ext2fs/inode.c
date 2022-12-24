@@ -24,34 +24,45 @@ void show_inode(int id, inode_t *inode) {
 
 inode_t *read_inode(floppy_device_t *dev, int inode_id) {
     trace("============== read inode id:%d===========\n", inode_id);
-    show_disk("read_inode", &dev->disk);
+    //show_disk("read_inode", &dev->disk);
     if (dev == 0) {
-        printf("read_inode, dev is nil.\n");
+        trace("read_inode, dev is nil.\n");
         return 0;
     }
-    if (dev->ready == 0)
+    if (dev->ready == 0) {
+        trace("read_inode, dev not ready. try init.\n");
         init_dev(dev);
+    }
 
-    int block_id = dev->desp->bg_inode_table;
+    int inode_group = dev->super->s_inodes_per_group;
+    int group_id = inode_id / inode_group;
+    int inode_in_group = inode_id % inode_group;
+    group_desc_t  *desp = dev->desp;
+    desp += group_id;
+    int block_id = desp->bg_inode_table;
+    trace("for inode:%d, group:%d, block_id:%d\n", inode_id, group_id, block_id);
+
+    int group_inode_skip = group_id * dev->super->s_inodes_per_group;
+
     int block_sz = dev->block_size;
-    int sz_offset = (inode_id - 1)* dev->super->s_inode_size;
+    int sz_offset = (inode_id - group_inode_skip - 1)* dev->super->s_inode_size;
     int block_offset = sz_offset / block_sz;
     block_id += block_offset;
     u32 inode_offset = (inode_id - 1) % 4;
 
-    trace("==inode id:%d, block id:%d, offset:%d==\n", inode_id, block_id, inode_offset);
+    trace("==inode id:%d, block id:%d, offset:%d, inodes/group:%d==\n", 
+        inode_id, block_id, inode_offset, dev->super->s_inodes_per_group);
     trace("inode sz: %d, block sz: %d, num in block: %d\n",
        dev->super->s_inode_size, block_sz, block_sz/dev->super->s_inode_size);
-    trace("block_id for inode : %d, inode offset: %d\n", block_id, inode_offset);
     u8 *buffer = 0;
-    //if (dev->inode_table.block_id != block_id) {
-        trace("locad block(%d) for inode(%d) table:,\n", block_id, inode_id);
+    if (dev->inode_table.block_id != block_id) {
+        trace("locate block(%d) for inode(%d) table:,\n", block_id, inode_id);
         if (dev->inode_table.buffer != 0)
             free(dev->inode_table.buffer);
         dev->inode_table.buffer = (u8*)malloc(block_sz);
         dev->inode_table.block_id = block_id;
         int nz = read_blocks(&dev->disk, block_id, dev->inode_table.buffer);
-    //}
+    }
     //trace("read block ret:%p\n", buffer);
 
     inode_t * inode = (inode_t *)dev->inode_table.buffer;
@@ -74,7 +85,7 @@ u32 get_inode_mode(disk_t *disk, int inode_id) {
     show_disk("get_inode_mode: ", disk);
     floppy_device_t *device = get_device(disk);
     device->disk = *disk;
-    inode_t *node =  read_inode(device, inode_id);
+    inode_t *node = read_inode(device, inode_id);
 
     if (node) {
         show_inode(inode_id, node);

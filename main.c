@@ -88,7 +88,7 @@ int main() {
     disk.major = DISK_TYPE_FLOPPY;
     disk.minor= PIMARY_DISK;
     disk.partition = 0;
-    enable_trace();
+    //enable_trace();
     mount_root(&disk);
 
     char buf[1024];
@@ -97,8 +97,8 @@ int main() {
         printf("> ");
         memset(buf, 0, 1024);
         char* ret = fgets(buf, 1000, stdin);
-        if (ret == 0) {
-            break;
+        if (ret == 0 || strlen(ret) == 0|| buf[0]== '\n') {
+            continue;
         }
 
         char str[4][80];

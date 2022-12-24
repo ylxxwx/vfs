@@ -16,6 +16,10 @@ mkfs -t ext2 /dev/loopxxx
 
 ## mount
 
+
+##
+
+dumpe2fs -h
 ## i-node
 1. i-node idx start from 0, 
 

@@ -22,7 +22,7 @@ typedef struct {
     //int cur_dir;
     //int path_p;
     //name_t path[PATH_DEPTH];
-    u32 group1_offset;
+    u32 partition_offset;
     super_block_t *super;
     group_desc_t  *desp;
     u32 block_size;

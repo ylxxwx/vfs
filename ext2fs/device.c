@@ -43,11 +43,10 @@ int read_blocks(disk_t *disk, int start_block_id, u8* buffer) {
         device->disk = *disk;
         init_dev(device);
     }
-    trace("read_blocks: g offset:%d\n", device->group1_offset);
-    int sector_id = block_offset_in_group1(device->group1_offset, device->super->s_log_block_size, start_block_id);
-    trace("read_blocks: g offset:%d, sector_id:%d\n", device->group1_offset, sector_id);
+    int sector_id = block_offset( device->partition_offset, start_block_id, device->super->s_log_block_size);
+    trace("read_blocks: sector_id:%d\n", sector_id);
     
-    int sz = read_sector(disk, sector_id, 2/*sectors_in_block(device->super->s_log_block_size)*/, (u8*)buffer);
+    int sz = read_sector(disk, sector_id, sectors_in_block(device->super->s_log_block_size), (u8*)buffer);
     return sz;
 }
 
@@ -59,14 +58,14 @@ void init_dev(floppy_device_t *device) {
     show_disk("init_dev: ", disk);
 
     if(disk->major == 1) {
-        device->group1_offset = get_harddisk_offset(disk);
-        trace("partition offset:%d\n", device->group1_offset);
+        device->partition_offset = get_harddisk_offset(disk);
+        trace("partition offset:%d\n", device->partition_offset);
     } else {
-        device->group1_offset = 0;
+        device->partition_offset = 0;
     }
 
     device->super = (super_block_t *)malloc(sizeof(super_block_t));
-    int super_loc = superblock_offset_in_group1(device->group1_offset);
+    int super_loc = superblock_offset(device->partition_offset);
     int sz = read_sector(disk, super_loc, 2, (u8*)device->super);
 
     if (sz == 2) {
@@ -81,11 +80,16 @@ void init_dev(floppy_device_t *device) {
 
 void read_desp(floppy_device_t *device) {
     if (device->super->s_magic == 0xef53) {
-        trace("block id for super :%d\n", device->super->s_first_data_block);
+        unsigned int group_count = 1 + (device->super->s_blocks_count-1) / device->super->s_blocks_per_group;
+        trace("block id for super :%d, groups:%d\n", device->super->s_first_data_block,
+          group_count);
         int block_id_for_desp = device->super->s_first_data_block +1;
-        trace("!!!read_desp, block size:%d\n", device->block_size);
+        trace("!!!read_desp, block size:%d, desp size:%d\n", device->block_size, sizeof(group_desc_t));
         device->desp = (group_desc_t*)malloc(1024);//device->block_size);
         read_blocks(&device->disk, block_id_for_desp, (u8*)device->desp);
         show_desp(device->desp);
+        show_desp(device->desp + 1);
+        show_desp(device->desp + 2);
+        show_desp(device->desp + 3);
     }
 }

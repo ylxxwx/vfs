@@ -11,13 +11,12 @@ desp locates in the next block to super
 */
 
 u32 sectors_in_block(int block_sz);
-u32 bootblock_offset_in_group1(int group1_offset);
-u32 firstblock_offset_in_group1(int group1_offset);
-u32 superblock_offset_in_group1(int group1_offset);
-/* 1. is super block.*/
-u32 block_offset_in_group1(int group1_offset, int block_sz, int block_id);
-/*block_sz is log size. 0: 1024(2 sector), 1: 2048(4 sector)*/
-u32 firstdespblock_offset_in_group1(int group1_offset, int block_sz);
-u32 block_offset_sector(int group1_offset, int block_sz, int block_id, int group_id, int blocks_in_group);
+u32 bootloader_offset();
+
+/*offset per sector*/
+u32 superblock_offset(int patition_offset);
+
+/*offset per sector*/
+u32 block_offset(int patition_offset,int block_id, int log_block_sz);
 
 #endif // _UTILS_H_
