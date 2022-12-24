@@ -12,7 +12,7 @@ u32 get_inode_mode(disk_t *dev, int inode_id);
 int is_inode_file(disk_t *dev, int inode_id);
 int is_inode_dir(disk_t *dev, int inode_id);
 
-void show_inode(inode_t *inode);
+void show_inode(int id, inode_t *inode);
 
 int get_next_dir_entry(disk_t *dev, int inode_id, char *name);
 void reset_dir_entry(disk_t *disk, int inode_id);

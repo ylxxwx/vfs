@@ -31,13 +31,14 @@ vfs_node_t root;
 vfs_node_t *cur = 0;
 
 int read_inode_file(vfs_node_t *node, char *buf) {
+    trace("read_inode_file, %d\n", node->inode_id);
     disk_t *disk = &node->disk;
     int inode = node->inode_id;
     int nz = get_inode_file(disk, inode, buf);
 }
 
 void sync_node(vfs_node_t *node) {
-    show_disk("sync_root: ", &node->disk);
+    show_disk("sync_node: ", &node->disk);
     node->mode = get_inode_mode(&node->disk, node->inode_id);
     if (node->mode == INVALID_MODE) {
         trace("sync node failed. mode is invalid.\n");
@@ -59,6 +60,8 @@ void sync_node(vfs_node_t *node) {
                 trace("read dir entry id:%d.\n", ret_node);
                 vfs_node_t *child = (vfs_node_t *)malloc(sizeof(vfs_node_t));
                 memset((u8*)child, 0, sizeof(vfs_node_t));
+                child->disk = node->disk;
+                //show_disk("child disk: ", &child->disk);
                 child->parent = node;
                 node->childs[idx++] = child;
                 strcpy(child->name, name);
@@ -150,7 +153,7 @@ void more_file(char *path) {
         if (0==strncmp(cur->childs[idx]->name, path, 64)) {
             if (cur->childs[idx]->synced == 0) {
                 sync_node(cur->childs[idx]);
-                trace("sync done\n");
+                trace("more file sync node done\n");
             }
             if (cur->childs[idx]->is_dir) {
                 trace("DIR ./..\n");
